@@ -24,12 +24,20 @@ func run(args []string) error {
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
-	addr := fmt.Sprintf("0.0.0.0:%d", *port)
+
+	var addr string
+
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		addr = ":"+envPort
+	} else {
+		addr = fmt.Sprintf("0.0.0.0:%d", *port)
+	}
+
 	srv, err := internal.NewServer()
 	if err != nil {
 		return err
 	}
-	fmt.Printf("listening on :%d\n", *port)
+	fmt.Printf("listening on %v\n", addr)
 	return http.ListenAndServe(addr, srv)
 }
 
