@@ -1,0 +1,174 @@
+swagger: "2.0"
+info:
+  description: "This is the specification of the restful mensa api.
+                The api provides the csv of dishes served by stwno formatted in json."
+  version: "1.0.0"
+  title: "Mensa Restful"
+  contact:
+    email: "schicho@fim.uni-passau.de"
+host: "mensa-restful.herokuapp.com"
+basePath: "/api"
+tags:
+- name: "simplified"
+  description: "Easy access to canteen data of your university"
+- name: "unix time"
+  description: "Access canteen data from your university, by specifying the day unix time"
+- name: "date"
+  description: "Access canteen data by specifiying a date YYYY-MM-DD"
+schemes:
+- "https"
+- "http"
+paths:
+  /{university}/today:
+    get:
+      tags:
+      - "simplified"
+      summary: "Get the dishes served today. Using local time at UTC+1"
+      parameters:
+        - name: university
+          description: "abbreviation of the canteen as used by stwno."
+          in: path
+          required: true
+          type: string
+      produces: 
+        - "application/json"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Dish"
+        "400":
+          description: "invalid university provided"
+        "500":
+            description: "invalid CSV from STWNO, could not download data"
+  /{university}/tommorrow:
+    get:
+      tags:
+      - "simplified"
+      summary: "Get the dishes served tomorrow. Using local time at UTC+1"
+      parameters:
+        - name: university
+          description: "abbreviation of the canteen as used by stwno."
+          in: path
+          required: true
+          type: string
+      produces: 
+        - "application/json"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Dish"
+        "400":
+          description: "invalid university provided"
+        "500":
+            description: "invalid CSV from STWNO, could not download data"
+  /{university}/week:
+    get:
+      tags:
+      - "simplified"
+      summary: "Get the dishes served this week. Using local time at UTC+1"
+      parameters:
+        - name: university
+          description: "abbreviation of the canteen as used by stwno."
+          in: path
+          required: true
+          type: string
+      produces: 
+        - "application/json"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Dish"
+        "400":
+          description: "invalid university provided"
+        "500":
+            description: "invalid CSV from STWNO, could not download data"
+
+  /{university}/timestamp/{timestamp}:
+    get:
+      tags:
+      - "unix time"
+      summary: "Get the dishes served on the specified day. Using local time at UTC+1"
+      parameters:
+        - name: university
+          description: "abbreviation of the canteen as used by stwno."
+          in: path
+          required: true
+          type: string
+        - name: timestamp
+          description: "unix timestamp"
+          in: path
+          required: true
+          type: integer
+      produces: 
+        - "application/json"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Dish"
+        "400":
+          description: "'invalid university provided'"
+        "404":
+          description: "'404 page not found' if {timestamp} is not an integer"
+        "500":
+            description: "'invalid CSV from STWNO', 'could not download data'"
+
+  /{university}/date/{date}:
+    get:
+      tags:
+      - "date"
+      summary: "Get the dishes served on the specified day. Using local time at UTC+1"
+      parameters:
+        - name: university
+          description: "abbreviation of the canteen as used by stwno."
+          in: path
+          required: true
+          type: string
+        - name: date
+          description: "date given as YYYY-MM-DD"
+          in: path
+          required: true
+          type: string
+      produces: 
+        - "application/json"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Dish"
+        "400":
+          description: "'invalid university provided', 'invalid date format. expect YYYY-MM-DD'"
+        "500":
+            description: "'invalid CSV from STWNO', 'could not download data'"
+definitions:
+  Dish:
+    type: "object"
+    properties:
+      date:
+        type: "string"
+        format: "DD-MM-YYYY"
+      type:
+        type: "string"
+      name:
+        type: "string"
+      tags:
+        type: "string"
+      price_student:
+        type: "string"
+      price_employee:
+        type: "string"
+      price_guest:
+        type: "string"
