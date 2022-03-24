@@ -39,7 +39,7 @@ type cacheddata struct {
 type Datastore struct {
 	// thread save map is needed, as the cache might get updated by another goroutine
 	// while data is being read.
-	data map[string](*mutexMap)
+	data map[string](*mutexMap[int, cacheddata])
 
 	// client is thread save and can be used by multiple goroutines.
 	client *http.Client
@@ -47,7 +47,7 @@ type Datastore struct {
 
 func NewDatastore() *Datastore {
 	d := &Datastore{
-		data: map[string](*mutexMap){
+		data: map[string](*mutexMap[int, cacheddata]){
 			"UNI-R": {},
 			"UNI-R-Gs": {},
 			"Cafeteria-PT": {},
@@ -66,7 +66,7 @@ func NewDatastore() *Datastore {
 		client: http.DefaultClient,
 	}
 	for k := range d.data {
-		d.data[k] = newMutexMap()
+		d.data[k] = newMutexMap[int, cacheddata]()
 	}
 	return d
 }
