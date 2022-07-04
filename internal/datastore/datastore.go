@@ -175,7 +175,7 @@ func (d *Datastore) getDishes(university string, ts time.Time) ([]dish, error) {
 		csvReader := newStwnoReader(bytes.NewBuffer(newData))
 		csvData, err := csvReader.ReadAll()
 		if err != nil {
-			log.Println("reading of CSV data failed weeknumber:", weeknumber, err)
+			log.Println("reading of CSV data failed weeknumber", weeknumber, ":", err)
 			return nil, ErrInvalidCSVData
 		}
 
@@ -238,6 +238,13 @@ func (d *Datastore) downloadCSV(university string, weeknumber int) (reuse bool, 
 		}
 		
 		newData = bufUTF8[:n]
+
+		// finally remove the arbitrary newlines, which are littered in the CSV.
+		// Fortunately those seem to appear in a pattern, being right before a semicolon.
+		// This is strange, but I don't serve the CSV, I just need to be able to read it.
+		// Better approach would be to have a CSV Reader which, just ignores newlines, until a complete entry is full.
+		newData = bytes.ReplaceAll(newData, []byte{'\n',';'}, []byte{';'})
+
 		etag = resp.Header.Get("Etag")
 		return
 	}
