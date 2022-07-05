@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 
 	"golang.org/x/text/encoding/charmap"
@@ -20,6 +21,8 @@ const url = "https://www.stwno.de/infomax/daten-extern/csv/%v/%v.csv"
 var ErrDownloadFromSourceFail error = errors.New("could not download data")
 var ErrInvalidUniversityRequest error = errors.New("invalid university provided")
 var ErrInvalidCSVData error = errors.New("invalid CSV from STWNO")
+
+var multilineReplace = regexp.MustCompile(`\n+;`)
 
 type dish struct {
 	Date          string `json:"date"`           // csv column 0
@@ -243,7 +246,7 @@ func (d *Datastore) downloadCSV(university string, weeknumber int) (reuse bool, 
 		// Fortunately those seem to appear in a pattern, being right before a semicolon.
 		// This is strange, but I don't serve the CSV, I just need to be able to read it.
 		// Better approach would be to have a CSV Reader which, just ignores newlines, until a complete entry is full.
-		newData = bytes.ReplaceAll(newData, []byte{'\n',';'}, []byte{';'})
+		newData = multilineReplace.ReplaceAll(newData, []byte{';'})
 
 		etag = resp.Header.Get("Etag")
 		return
