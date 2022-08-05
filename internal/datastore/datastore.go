@@ -39,9 +39,7 @@ type cacheddata struct {
 }
 
 type Datastore struct {
-	// thread save map is needed, as the cache might get updated by another goroutine
-	// while data is being read.
-	data map[string](*mutexMap[int, cacheddata])
+	universities map[string]struct{}
 
 	// client is thread save and can be used by multiple goroutines.
 	client *http.Client
@@ -49,7 +47,7 @@ type Datastore struct {
 
 func NewDatastore() *Datastore {
 	d := &Datastore{
-		data: map[string](*mutexMap[int, cacheddata]){
+		universities: map[string]struct{}{
 			"UNI-R": {},
 			"UNI-R-Gs": {},
 			"Cafeteria-PT": {},
@@ -67,14 +65,11 @@ func NewDatastore() *Datastore {
 		},
 		client: http.DefaultClient,
 	}
-	for k := range d.data {
-		d.data[k] = newMutexMap[int, cacheddata]()
-	}
 	return d
 }
 
 func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]byte, error) {
-	if _, ok := d.data[university]; !ok {
+	if _, ok := d.universities[university]; !ok {
 		return nil, ErrInvalidUniversityRequest
 	}
 
@@ -153,10 +148,8 @@ func newStwnoReader(r io.Reader) *csv.Reader {
 }
 
 // getDishes gets all dishes for a certain week, specified by the timestamp.
-// It reuses the cached data, if the data at STWNO has not changed.
-// If it has changed it will return the updated list of dishes and update the cache.
 func (d *Datastore) getDishes(university string, ts time.Time) ([]dish, error) {
-	if _, ok := d.data[university]; !ok {
+	if _, ok := d.universities[university]; !ok {
 		return nil, ErrInvalidUniversityRequest
 	}
 	_, weeknumber := ts.ISOWeek()
@@ -173,16 +166,14 @@ func (d *Datastore) getDishes(university string, ts time.Time) ([]dish, error) {
 		log.Println("reading of CSV data failed weeknumber", weeknumber, ":", err)
 		return nil, ErrInvalidCSVData
 	}
-	// cache data and return.
 	dishes := convertStwnoCSVToDishSlice(csvData)
-	d.data[university].Store(weeknumber, cacheddata{dishes: dishes})
 	return dishes, nil
 
 }
 
 // downloadCSV downloads the source CSV file.
 func (d *Datastore) downloadCSV(university string, weeknumber int) ([]byte, error) {
-	if _, ok := d.data[university]; !ok {
+	if _, ok := d.universities[university]; !ok {
 		return nil, ErrInvalidUniversityRequest
 	}
 	url := fmt.Sprintf(url, university, weeknumber)
