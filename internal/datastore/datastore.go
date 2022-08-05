@@ -35,7 +35,6 @@ type dish struct {
 }
 
 type cacheddata struct {
-	etag string
 	dishes []dish
 }
 
@@ -81,7 +80,6 @@ func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]
 
 	dishes, err := d.getDishes(university, ts)
 	if err != nil {
-		// passthrough error
 		return nil, err
 	}
 
@@ -163,92 +161,63 @@ func (d *Datastore) getDishes(university string, ts time.Time) ([]dish, error) {
 	}
 	_, weeknumber := ts.ISOWeek()
 
-	reuse, newData, etag, err := d.downloadCSV(university, weeknumber)
+	newData, err := d.downloadCSV(university, weeknumber)
 	if err != nil {
 		return nil, err
 	}
 
-	if reuse {
-		// no need to further check this as reuse is only set true,
-		// if data was already present.
-		data, _ :=  d.data[university].Load(weeknumber)
-		return data.dishes, nil
-	} else {
-		// parse and convert data.
-		csvReader := newStwnoReader(bytes.NewBuffer(newData))
-		csvData, err := csvReader.ReadAll()
-		if err != nil {
-			log.Println("reading of CSV data failed weeknumber", weeknumber, ":", err)
-			return nil, ErrInvalidCSVData
-		}
-
-		// cache data and return.
-		dishes := convertStwnoCSVToDishSlice(csvData)
-		d.data[university].Store(weeknumber, cacheddata{dishes: dishes, etag: etag})
-		return dishes, nil
+	// parse and convert data.
+	csvReader := newStwnoReader(bytes.NewBuffer(newData))
+	csvData, err := csvReader.ReadAll()
+	if err != nil {
+		log.Println("reading of CSV data failed weeknumber", weeknumber, ":", err)
+		return nil, ErrInvalidCSVData
 	}
+	// cache data and return.
+	dishes := convertStwnoCSVToDishSlice(csvData)
+	d.data[university].Store(weeknumber, cacheddata{dishes: dishes})
+	return dishes, nil
+
 }
 
-// downloadCSV downloads the source CSV file. It uses a conditional HTTP GET request.
-// reuse is true if the previous data can be reused. In this case newData is nil an may not be used.
-// If reuse is false, newData will contain the new CSV data and etag the new etag string.
-// If an error occurs the above does not hold. The return values may not be used.
-//curl -I https://www.stwno.de/infomax/daten-extern/csv/UNI-P/11.csv --header 'If-None-Match: "af8-5da5643025f0b"'
-func (d *Datastore) downloadCSV(university string, weeknumber int) (reuse bool, newData []byte, etag string, err error) {
+// downloadCSV downloads the source CSV file.
+func (d *Datastore) downloadCSV(university string, weeknumber int) ([]byte, error) {
 	if _, ok := d.data[university]; !ok {
-		err = ErrInvalidUniversityRequest
-		return
+		return nil, ErrInvalidUniversityRequest
 	}
 	url := fmt.Sprintf(url, university, weeknumber)
 
 	req, _ := http.NewRequest("GET", url, nil)
 	const userAgent = "mensa_json_api_crawler"
 	req.Header.Set("User-Agent", userAgent)
-
-	if cached, ok := d.data[university].Load(weeknumber); ok {
-		req.Header.Add("If-None-Match", cached.etag)
-	}
 	
 	resp, err := d.client.Do(req)
 	if err != nil {
 		log.Println("download of CSV failed", err)
-		err = ErrDownloadFromSourceFail
-		return
+		return nil, ErrDownloadFromSourceFail
 	}
 	defer resp.Body.Close()
 
-	// Not modified.
-	if resp.StatusCode == 304 {
-		reuse = true
-		return
-	} else {
-		log.Println("cache outdated or non present for", university, weeknumber)
-		respData, readErr := io.ReadAll(resp.Body)
-		if readErr != nil {
-			log.Println("reading response failed", readErr)
-			err = ErrDownloadFromSourceFail
-			return
-		}
-		
-		// convert this horrible format that is used by stwno to UTF8.
-		decoder := charmap.Windows1252.NewDecoder()
-		bufUTF8 := make([]byte, len(respData)*3)
-		n, _, decoderErr := decoder.Transform(bufUTF8, respData, false)
-		if decoderErr != nil {
-			log.Println("conversion to UTF8 failed", err)
-			err = ErrDownloadFromSourceFail
-			return
-		}
-		
-		newData = bufUTF8[:n]
-
-		// finally remove the arbitrary newlines, which are littered in the CSV.
-		// Fortunately those seem to appear in a pattern, being right before a semicolon.
-		// This is strange, but I don't serve the CSV, I just need to be able to read it.
-		// Better approach would be to have a CSV Reader which, just ignores newlines, until a complete entry is full.
-		newData = multilineReplace.ReplaceAll(newData, []byte{';'})
-
-		etag = resp.Header.Get("Etag")
-		return
+	respData, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		log.Println("reading response failed", readErr)
+		return nil, ErrDownloadFromSourceFail
 	}
+	
+	// convert this horrible format that is used by stwno to UTF8.
+	decoder := charmap.Windows1252.NewDecoder()
+	bufUTF8 := make([]byte, len(respData)*3)
+	n, _, decoderErr := decoder.Transform(bufUTF8, respData, false)
+	if decoderErr != nil {
+		log.Println("conversion to UTF8 failed", err)
+		return nil, ErrDownloadFromSourceFail
+	}
+	
+	newData := bufUTF8[:n]
+	// finally remove the arbitrary newlines, which are littered in the CSV.
+	// Fortunately those seem to appear in a pattern, being right before a semicolon.
+	// This is strange, but I don't serve the CSV, I just need to be able to read it.
+	// Better approach would be to have a CSV Reader which, just ignores newlines, until a complete entry is full.
+	newData = multilineReplace.ReplaceAll(newData, []byte{';'})
+	return newData, nil
 }
