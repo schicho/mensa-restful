@@ -22,7 +22,7 @@ var ErrDownloadFromSourceFail error = errors.New("could not download data")
 var ErrInvalidUniversityRequest error = errors.New("invalid university provided")
 var ErrInvalidCSVData error = errors.New("invalid CSV from STWNO")
 
-var multilineReplace = regexp.MustCompile(`\n+;`)
+var removeMultiNewline = regexp.MustCompile(`\n+;`)
 
 type dish struct {
 	Date          string `json:"date"`           // csv column 0
@@ -32,10 +32,6 @@ type dish struct {
 	PriceStudent  string `json:"price_student"`  // csv column 6
 	PriceEmployee string `json:"price_employee"` // csv column 7
 	PriceGuest    string `json:"price_guest"`    // csv column 8
-}
-
-type cacheddata struct {
-	dishes []dish
 }
 
 type Datastore struct {
@@ -209,6 +205,6 @@ func (d *Datastore) downloadCSV(university string, weeknumber int) ([]byte, erro
 	// Fortunately those seem to appear in a pattern, being right before a semicolon.
 	// This is strange, but I don't serve the CSV, I just need to be able to read it.
 	// Better approach would be to have a CSV Reader which, just ignores newlines, until a complete entry is full.
-	newData = multilineReplace.ReplaceAll(newData, []byte{';'})
+	newData = removeMultiNewline.ReplaceAll(newData, []byte{';'})
 	return newData, nil
 }
