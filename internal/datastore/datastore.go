@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/allegro/bigcache/v3"
 	"golang.org/x/text/encoding/charmap"
 )
 
@@ -36,12 +37,15 @@ type dish struct {
 
 type Datastore struct {
 	universities map[string]struct{}
-
+	cache *bigcache.BigCache
 	// client is thread save and can be used by multiple goroutines.
 	client *http.Client
 }
 
 func NewDatastore() *Datastore {
+	// use simple initialization
+	bc, _ := bigcache.NewBigCache(bigcache.DefaultConfig(5 * time.Minute))
+
 	d := &Datastore{
 		universities: map[string]struct{}{
 			"UNI-R": {},
@@ -59,6 +63,7 @@ func NewDatastore() *Datastore {
 			"HS-SR": {},
 			"HS-PAN": {},
 		},
+		cache: bc,
 		client: http.DefaultClient,
 	}
 	return d
@@ -69,6 +74,15 @@ func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]
 		return nil, ErrInvalidUniversityRequest
 	}
 
+	requestKey := fmt.Sprint(university, ts.YearDay(), filterDay)
+
+	// quick respond with cached value
+	cachedJson, err := d.cache.Get(requestKey)
+	if err == nil {
+		return cachedJson, nil
+	}
+
+	// get data and transform into json
 	dishes, err := d.getDishes(university, ts)
 	if err != nil {
 		return nil, err
@@ -84,6 +98,9 @@ func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]
 		log.Println("marshalling of dishes failed", err)
 		return nil, ErrInvalidCSVData
 	}
+
+	// populate cache with new data for future requests
+	d.cache.Set(requestKey, json)
 	return json, nil
 }
 
