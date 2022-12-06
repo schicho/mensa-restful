@@ -7,12 +7,14 @@ import (
 	"github.com/schicho/mensa-restful/internal/datastore"
 )
 
+const jsonContentType = "application/json; charset=utf-8"
+
 func (s *server) respond(w http.ResponseWriter, university string, ts time.Time) {
 	data, err := s.datastore.GetJsonDay(university, ts)
 	if err != nil {
 		respondError(w, err)
 	} else {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", jsonContentType)
 		w.Write(data)
 	}
 }
@@ -22,7 +24,7 @@ func (s *server) respondWeek(w http.ResponseWriter, university string, ts time.T
 	if err != nil {
 		respondError(w, err)
 	} else {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", jsonContentType)
 		w.Write(data)
 	}
 }
