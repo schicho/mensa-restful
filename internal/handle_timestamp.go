@@ -5,16 +5,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 )
 
 func (s *server) handleTimestamp() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		// No need to check error here. gorilla mux already does regex check this.
-		unixts, _ := strconv.Atoi(vars["ts"])
+		unixts, _ := strconv.Atoi(chi.URLParam(r, "ts"))
 		ts := time.Unix(int64(unixts), 0)
 
-		s.respond(w, vars["university"], ts)
+		s.respond(w, chi.URLParam(r, "university"), ts)
 	}
 }

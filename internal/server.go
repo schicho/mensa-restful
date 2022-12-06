@@ -3,19 +3,19 @@ package internal
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 	"github.com/schicho/mensa-restful/internal/datastore"
 )
 
 type server struct {
-	mux       *mux.Router
+	mux       *chi.Mux
 	datastore *datastore.Datastore
 }
 
 func NewServer() (*server, error) {
 	srv := &server{
 		// StrictSlash(true) allows us to ignore trailing slashes.
-		mux:       mux.NewRouter().StrictSlash(true),
+		mux:       chi.NewRouter(),
 		datastore: datastore.NewDatastore(),
 	}
 	srv.routes()
