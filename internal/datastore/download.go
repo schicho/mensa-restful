@@ -57,7 +57,7 @@ func (d *Datastore) makeRequest(url string) ([]byte, error) {
 	}
 	const userAgent = "mensa_json_api_crawler"
 	req.Header.Set("User-Agent", userAgent)
-	
+
 	resp, err := d.client.Do(req)
 	if err != nil {
 		log.Println("download of CSV failed", err)

@@ -15,7 +15,7 @@ func (s *server) handleToday() http.HandlerFunc {
 
 func (s *server) handleTomorrow() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.respond(w, mux.Vars(r)["university"], time.Now().Add(24 * time.Hour))
+		s.respond(w, mux.Vars(r)["university"], time.Now().Add(24*time.Hour))
 	}
 }
 

@@ -11,20 +11,20 @@ import (
 )
 
 var universities = map[string]struct{}{
-	"UNI-R": {},
-	"UNI-R-Gs": {},
-	"Cafeteria-PT": {},
-	"Cafeteria-Chemie": {},
-	"Cafeteria-Sport": {},
-	"HS-R-tag": {},
-	"HS-R-abend": {},
-	"Cafeteria-pruefening": {},
-	"UNI-P": {},
+	"UNI-R":                   {},
+	"UNI-R-Gs":                {},
+	"Cafeteria-PT":            {},
+	"Cafeteria-Chemie":        {},
+	"Cafeteria-Sport":         {},
+	"HS-R-tag":                {},
+	"HS-R-abend":              {},
+	"Cafeteria-pruefening":    {},
+	"UNI-P":                   {},
 	"Cafeteria-Nikolakloster": {},
-	"HS-DEG": {},
-	"HS-LA": {},
-	"HS-SR": {},
-	"HS-PAN": {},
+	"HS-DEG":                  {},
+	"HS-LA":                   {},
+	"HS-SR":                   {},
+	"HS-PAN":                  {},
 }
 
 type dish struct {
@@ -48,7 +48,7 @@ func NewDatastore() *Datastore {
 	bc, _ := bigcache.NewBigCache(bigcache.DefaultConfig(5 * time.Minute))
 
 	d := &Datastore{
-		cache: bc,
+		cache:  bc,
 		client: http.DefaultClient,
 	}
 	return d
@@ -67,7 +67,7 @@ func (d *Datastore) GetJsonWeek(university string, ts time.Time) ([]byte, error)
 }
 
 // getJson returns the JSON data for the given university and timestamp.
-// It may return cached data, if the data has been recently requested 
+// It may return cached data, if the data has been recently requested
 func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]byte, error) {
 	if _, ok := universities[university]; !ok {
 		return nil, ErrInvalidUniversityRequest
@@ -108,7 +108,7 @@ func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]
 func filterDishesDay(dishes []dish, ts time.Time) []dish {
 	var dishesForDate []dish = make([]dish, 0, 10)
 	date := ts.Format("02.01.2006")
-	
+
 	for _, dish := range dishes {
 		if dish.Date == date {
 			dishesForDate = append(dishesForDate, dish)

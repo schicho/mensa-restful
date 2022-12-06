@@ -28,7 +28,7 @@ func run(args []string) error {
 	var addr string
 
 	if envPort := os.Getenv("PORT"); envPort != "" {
-		addr = ":"+envPort
+		addr = ":" + envPort
 	} else {
 		addr = fmt.Sprintf("0.0.0.0:%d", *port)
 	}
@@ -40,4 +40,3 @@ func run(args []string) error {
 	fmt.Printf("listening on %v\n", addr)
 	return http.ListenAndServe(addr, srv)
 }
-

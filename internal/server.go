@@ -8,14 +8,14 @@ import (
 )
 
 type server struct {
-	mux *mux.Router
+	mux       *mux.Router
 	datastore *datastore.Datastore
 }
 
 func NewServer() (*server, error) {
 	srv := &server{
 		// StrictSlash(true) allows us to ignore trailing slashes.
-		mux: mux.NewRouter().StrictSlash(true),
+		mux:       mux.NewRouter().StrictSlash(true),
 		datastore: datastore.NewDatastore(),
 	}
 	srv.routes()

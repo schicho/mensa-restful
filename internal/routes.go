@@ -12,6 +12,6 @@ func (s *server) routes() {
 
 	// syntactic sugar
 	u.HandleFunc("/today", s.handleToday()).Methods("GET")
-	u.HandleFunc("/tomorrow",s.handleTomorrow()).Methods("GET")
+	u.HandleFunc("/tomorrow", s.handleTomorrow()).Methods("GET")
 	u.HandleFunc("/week", s.handleWeek()).Methods("GET")
 }

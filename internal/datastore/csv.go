@@ -40,7 +40,7 @@ func parseCSVToDishes(data []byte) ([]dish, error) {
 	reader := newStwnoReader(bytes.NewReader(data))
 	csvData, err := reader.ReadAll()
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 	return convertParsedCSVToDishSlice(csvData), nil
 }
@@ -59,25 +59,33 @@ func convertParsedCSVToDishSlice(csvData [][]string) []dish {
 	// guesstimate of around 10 dishes per weekday.
 	var dishes []dish = make([]dish, 0, 50)
 	for i, line := range csvData {
-        if i > 0 { // omit header line
-            var rec dish
-            for j, val := range line {
+		if i > 0 { // omit header line
+			var rec dish
+			for j, val := range line {
 				// for this the layout of the csv needs to be known.
 				// see dish struct in datastore.go.
-                switch j {
-				case 0: rec.Date = val
-				case 2: rec.Type = val
-				case 3: rec.Name = val
-				case 4: rec.Tags = val
-				case 6: rec.PriceStudent = val
-				case 7: rec.PriceEmployee = val
-				case 8: rec.PriceGuest = val
+				switch j {
+				case 0:
+					rec.Date = val
+				case 2:
+					rec.Type = val
+				case 3:
+					rec.Name = val
+				case 4:
+					rec.Tags = val
+				case 6:
+					rec.PriceStudent = val
+				case 7:
+					rec.PriceEmployee = val
+				case 8:
+					rec.PriceGuest = val
 				// do not care about the other fields.
-				default: continue
+				default:
+					continue
 				}
-            }
-            dishes = append(dishes, rec)
-        }
-    }
-    return dishes
+			}
+			dishes = append(dishes, rec)
+		}
+	}
+	return dishes
 }

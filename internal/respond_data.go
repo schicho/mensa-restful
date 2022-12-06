@@ -29,11 +29,11 @@ func (s *server) respondWeek(w http.ResponseWriter, university string, ts time.T
 
 func respondError(w http.ResponseWriter, err error) {
 	switch err {
-		case datastore.ErrInvalidUniversityRequest:
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		case datastore.ErrDownloadFromSourceFail:
-			fallthrough
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+	case datastore.ErrInvalidUniversityRequest:
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	case datastore.ErrDownloadFromSourceFail:
+		fallthrough
+	default:
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
