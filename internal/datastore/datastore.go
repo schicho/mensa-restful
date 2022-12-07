@@ -50,7 +50,7 @@ func NewDatastore() *Datastore {
 
 	d := &Datastore{
 		cache:  bc,
-		client: http.DefaultClient,
+		client: &http.Client{},
 	}
 	return d
 }
