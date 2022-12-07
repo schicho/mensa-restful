@@ -67,6 +67,11 @@ func (d *Datastore) GetJsonWeek(university string, ts time.Time) ([]byte, error)
 	return d.getJson(university, ts, false)
 }
 
+// buildCacheKey returns the cache key for the given university and timestamp day and filterDay.
+func buildCacheKey(university string, ts time.Time, filterDay bool) string {
+	return fmt.Sprint(university, ts.YearDay(), filterDay)
+}
+
 // getJson returns the JSON data for the given university and timestamp.
 // It may return cached data, if the data has been recently requested
 func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]byte, error) {
@@ -74,14 +79,13 @@ func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]
 		return nil, ErrInvalidUniversityRequest
 	}
 
-	requestKey := fmt.Sprint(university, ts.YearDay(), filterDay)
+	cacheKey := buildCacheKey(university, ts, filterDay)
 
 	// quick respond with cached value
-	if cachedJson, err := d.cache.Get(requestKey); err == nil {
-		// log.Println("cache hit", requestKey)
+	if cachedJson, err := d.cache.Get(cacheKey); err == nil {
+		// cache hit
 		return cachedJson, nil
 	}
-	// log.Println("cache miss", requestKey)
 
 	dishes, err := d.getDishes(university, ts)
 	if err != nil {
@@ -95,12 +99,15 @@ func (d *Datastore) getJson(university string, ts time.Time, filterDay bool) ([]
 	json, err := json.Marshal(dishes)
 	if err != nil {
 		// report and assume invalid CSV when marshaling error happens.
-		log.Println("marshalling of dishes failed", err)
+		log.Println(err)
 		return nil, ErrInvalidCSVData
 	}
 
 	// populate cache with new data for future requests.
-	d.cache.Set(requestKey, json)
+	err = d.cache.Set(cacheKey, json)
+	if err != nil {
+		log.Println(err)
+	}
 	return json, nil
 }
 
