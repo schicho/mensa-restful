@@ -31,12 +31,14 @@ func (d *Datastore) downloadCSV(university string, weeknumber int) ([]byte, erro
 	url := fmt.Sprintf(url, university, weeknumber)
 	respData, err := d.makeRequest(url)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, ErrDownloadFromSourceFail
 	}
 
 	data, err := convertWindows1252ToUTF8(respData)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, ErrDownloadFromSourceFail
 	}
 
 	// finally remove the arbitrary newlines, which are littered in the CSV.
@@ -60,15 +62,13 @@ func (d *Datastore) makeRequest(url string) ([]byte, error) {
 
 	resp, err := d.client.Do(req)
 	if err != nil {
-		log.Println("download of CSV failed", err)
-		return nil, ErrDownloadFromSourceFail
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	respData, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		log.Println("reading response failed", readErr)
-		return nil, ErrDownloadFromSourceFail
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
 
 	return respData, nil
