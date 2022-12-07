@@ -26,7 +26,7 @@ func (d *Datastore) getDishes(university string, ts time.Time) ([]dish, error) {
 
 	dishes, err := parseCSVToDishes(data)
 	if err != nil {
-		log.Printf("%v, for %v week %v", err, university, weeknumber)
+		log.Printf("%v: %v (for %v week %v)", ErrInvalidCSVData, err, university, weeknumber)
 		return nil, ErrInvalidCSVData
 	}
 
