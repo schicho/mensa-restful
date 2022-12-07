@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -45,7 +46,7 @@ type Datastore struct {
 
 func NewDatastore() *Datastore {
 	// use simple initialization
-	bc, _ := bigcache.NewBigCache(bigcache.DefaultConfig(5 * time.Minute))
+	bc, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(5*time.Minute))
 
 	d := &Datastore{
 		cache:  bc,
