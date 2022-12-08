@@ -11,6 +11,9 @@ func (s *server) routes() {
 	s.mux.Use(middleware.Logger)
 	s.mux.Use(middleware.Recoverer)
 
+	// we use the root directory for health checks.
+	s.mux.Use(middleware.Heartbeat("/"))
+
 	// this prefix is always required.
 	s.mux.Route("/api/{university}", func(r chi.Router) {
 		// trailing slashes are ignored in this subrouter.
