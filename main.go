@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -11,32 +11,45 @@ import (
 
 func main() {
 	if err := run(os.Args); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 }
 
-func run(args []string) error {
-	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
+// whichAddress returns the address for the server to listen on.
+// The address is either taken from the PORT environment variable
+// or from the -port flag.
+// The environment variable takes precedence.
+// If neither is set, the default port 8080 is used.
+func whichAddress(args []string) (string, error) {
+	flags := flag.NewFlagSet("mensa-restful", flag.ContinueOnError)
 	var (
-		port = flags.Int("port", 8080, "port to listen on")
+		port = flags.String("port", "8080", "port to listen on")
 	)
 	if err := flags.Parse(args[1:]); err != nil {
-		return err
+		return "", err
 	}
 
 	var addr string
 
 	if envPort := os.Getenv("PORT"); envPort != "" {
-		addr = ":" + envPort
+		addr = "0.0.0.0:" + envPort
 	} else {
-		addr = fmt.Sprintf("0.0.0.0:%d", *port)
+		addr = "0.0.0.0:" + *port
+	}
+	return addr, nil
+}
+
+func run(args []string) error {
+	addr, err := whichAddress(args)
+	if err != nil {
+		return err
 	}
 
 	srv, err := internal.NewServer()
 	if err != nil {
 		return err
 	}
-	fmt.Printf("listening on %v\n", addr)
+
+	log.Printf("listening on %v\n", addr)
 	return http.ListenAndServe(addr, srv)
 }
